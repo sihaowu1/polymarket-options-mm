@@ -16,7 +16,7 @@ EVENT = f"wti-closes-above-on-july-31-2026"
 GAMMA_API = "https://gamma-api.polymarket.com/events/slug/"
 CLOB_API = "https://clob.polymarket.com/prices-history"
 
-DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 
 
 def main() -> None:
@@ -46,14 +46,14 @@ def main() -> None:
             params={
                 "market": yes_token,
                 "interval": "max",
-                "fidelity": 60,
+                "fidelity": 1,
             },
             timeout=10,
         ).json()["history"]
 
         data[strike] = history
 
-    out_path = os.path.join(DATA_DIR, f"{EVENT}.json")
+    out_path = os.path.join(DATA_DIR, f"polymarket-{YEAR}-{MONTH}-{DAY}.json")
     with open(out_path, "w") as f:
         json.dump(data, f)
 
