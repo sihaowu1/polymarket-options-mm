@@ -26,7 +26,7 @@ def main() -> None:
     )
 
     data = [
-        {"t": int(ts.timestamp()), "p": float(row["Close"])}
+        {"t": int(ts.timestamp()), "f": float(row["Close"])}
         for ts, row in bars.iterrows()
     ]
 

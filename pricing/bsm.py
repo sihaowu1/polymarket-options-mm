@@ -1,11 +1,19 @@
 from datetime import datetime, timezone
 from math import exp, log, sqrt
 from zoneinfo import ZoneInfo
+import pandas as pd
+import json
+import bisect
 
 from scipy.stats import norm
 
 SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 CLOSE_TZ = ZoneInfo("America/New_York")
+
+
+def get_vol() -> float:
+    """TODO"""
+    return 0.0
 
 
 def time_to_expiry(t: int) -> float:
@@ -27,3 +35,51 @@ def black76_call(F: float, K: float, T: float, vol: float, r: float = 0) -> floa
     d2 = d1 - vol * sqrt(T)
 
     return exp(-r * T) * (F * norm.cdf(d1) - K * norm.cdf(d2))
+
+
+def call_spread_probability(K1: float, K2: float) -> float: 
+    return (black76_call(K1) - black76_call(K2)) / (K2 - K1) 
+
+
+def get_call_spread_probability_series(polymarket_strike: str) -> None:
+    """Get a series of {t, p} of implied probability from call spread"""
+
+    # first Unix timestamp of that day
+    with open("../data/polymarket-2026-7-31.json") as f:
+        poly = json.load(f)
+
+    first_t = poly[polymarket_strike][0]["t"]
+
+    # import the future prices
+    with open("../data/futures-2026-07-31.json") as f:
+        futures = json.load(f) 
+
+    # sort future prices by t
+    futures.sort(key=lambda pt: pt["t"])
+
+    # only start calculated implied probability after first_t
+    times = [pt["t"] for pt in futures]
+    start_t = bisect.bisect_left(times, first_t) 
+
+    # initiate pd dataframe
+    output = pd.DataFrame(columns={"futures_t", "futures_p"})
+
+    # iterate through all future prices and store them to the series
+    for pt in futures[start_t:]: 
+        K1 = pt["f"] - 0.5
+        K2 = pt["f"] + 0.5
+        p = call_spread_probability(K1, K2) 
+
+        new_row = pd.DataFrame([{"futures_t": pt["t"], "futures_p": p}])
+
+        output = pd.concat([output, new_row], ignore_index=True) 
+
+    output.to_parquet(f"../data/bsm_{polymarket_strike.lstrip("$")}.parquet")
+
+
+def main() -> None: 
+    with open("../data/polymarket-2026-7-31.json") as f:
+        poly = json.load(f)
+
+    for strike, history in poly.items():
+        get_call_spread_probability_series(strike)
