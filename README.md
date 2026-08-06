@@ -33,6 +33,23 @@ Also, note that in the payoff diagram, it doesn't jump from -$1 to $1 immediatel
 
 where r is risk-free rate, T is time to expiry, Q is risk-neutral pricing distribution. we lowkey don't need this since our contract is so short-lived and narrow
 
+### What about N(d2) from BSM? 
+
+d2 is one of two outputs in BSM representing the risk-adjusted standardized value. 
+We can get it through a call option. 
+If we pass this through a normal distribution to get N(d2), we can find the probability that the option ends ITM. 
+
+However, a single-strike at $80 gives one estimate as to how uncertain oil prices are. 
+But the $79.50 and $80.50 strikes are slightly different and can tell us more information about how the 
+options market views outcomes just above and below $80. 
+Alternatively, just think of this as: instead of consulting 1 person for advice, you consult two. 
+
+A call option contains exposure to how far above $80 crude oil will close. 
+We don't care about this since for Polymarket, all payouts above $80 are the same, so the call-spread is closer. 
+
+Plus, d2 is not tradeable. 
+We can buy or sell a call-spread to serve as either a relative-value opportunity to a hedge. 
+
 ## Trading
 
 Now that we have the implied probability that oil will finish above a certain price, we can calculate the difference. 

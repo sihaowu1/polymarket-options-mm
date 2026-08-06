@@ -41,6 +41,18 @@ def black76_call(F: float, K: float, T: float, vol: float, r: float = 0) -> floa
     return exp(-r * T) * (F * norm.cdf(d1) - K * norm.cdf(d2))
 
 
+def call_spread_probability(F: float, K1: float, K2: float, T: float, vol: float, r: float = 0) -> float:
+    """
+    Approximate P(K1 < F_T < K2) via a $(K2-K1)$-wide call spread, i.e. a finite
+    difference of -dC/dK. This is the right tool for a market that pays off on
+    price landing inside a band. It also converges to prob_above(F, K1, ...) as
+    K2 - K1 -> 0, since -dC/dK is exactly the digital call. Kept here alongside
+    prob_above as a numerical cross-check of the exact digital formula, not
+    because these "closes above $K" markets need a band.
+    """
+    return (black76_call(F, K1, T, vol, r) - black76_call(F, K2, T, vol, r)) / (K2 - K1)
+
+
 def prob_above(F: float, K: float, T: float, vol: float, r: float = 0) -> float:
     """Risk-neutral probability that F_T > K (Black-76 digital call)."""
     if T <= 0:
@@ -74,12 +86,15 @@ def get_call_spread_probability_series(polymarket_strike: str) -> None:
 
     strike = float(polymarket_strike.lstrip("$"))
 
+    K1 = strike - 0.5
+    K2 = strike + 0.5
+
     # iterate through all future prices and store them to the series
     rows = []
     for pt in futures[start_t:]:
         T = time_to_expiry(pt["t"])
         vol = get_vol()
-        p = prob_above(pt["f"], strike, T, vol)
+        p = call_spread_probability(pt["f"], K1, K2, T, vol)
 
         rows.append({"futures_t": pt["t"], "futures_p": p})
 
@@ -94,3 +109,7 @@ def main() -> None:
 
     for strike, history in poly.items():
         get_call_spread_probability_series(strike)
+
+
+if __name__ == "__main__": 
+    main()
