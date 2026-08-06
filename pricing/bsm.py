@@ -12,8 +12,12 @@ CLOSE_TZ = ZoneInfo("America/New_York")
 
 
 def get_vol() -> float:
-    """TODO"""
-    return 0.0
+    """
+    manually obtain from CME options settlement tool
+    
+    this is the jul 31 vol as viewed from jul 30
+    """
+    return 0.01
 
 
 def time_to_expiry(t: int) -> float:
