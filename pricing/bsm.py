@@ -37,8 +37,8 @@ def black76_call(F: float, K: float, T: float, vol: float, r: float = 0) -> floa
     return exp(-r * T) * (F * norm.cdf(d1) - K * norm.cdf(d2))
 
 
-def call_spread_probability(K1: float, K2: float) -> float: 
-    return (black76_call(K1) - black76_call(K2)) / (K2 - K1) 
+def call_spread_probability(F: float, K1: float, K2: float, T: float, vol: float, r: float = 0) -> float:
+    return (black76_call(F, K1, T, vol, r) - black76_call(F, K2, T, vol, r)) / (K2 - K1)
 
 
 def get_call_spread_probability_series(polymarket_strike: str) -> None:
@@ -61,18 +61,18 @@ def get_call_spread_probability_series(polymarket_strike: str) -> None:
     times = [pt["t"] for pt in futures]
     start_t = bisect.bisect_left(times, first_t) 
 
-    # initiate pd dataframe
-    output = pd.DataFrame(columns={"futures_t", "futures_p"})
-
     # iterate through all future prices and store them to the series
-    for pt in futures[start_t:]: 
+    rows = []
+    for pt in futures[start_t:]:
         K1 = pt["f"] - 0.5
         K2 = pt["f"] + 0.5
-        p = call_spread_probability(K1, K2) 
+        T = time_to_expiry(pt["t"])
+        vol = get_vol()
+        p = call_spread_probability(pt["f"], K1, K2, T, vol)
 
-        new_row = pd.DataFrame([{"futures_t": pt["t"], "futures_p": p}])
+        rows.append({"futures_t": pt["t"], "futures_p": p})
 
-        output = pd.concat([output, new_row], ignore_index=True) 
+    output = pd.DataFrame(rows, columns=["futures_t", "futures_p"])
 
     output.to_parquet(f"../data/bsm_{polymarket_strike.lstrip("$")}.parquet")
 
