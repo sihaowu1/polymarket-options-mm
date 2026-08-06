@@ -17,7 +17,7 @@ def get_vol() -> float:
     
     this is the jul 31 vol as viewed from jul 30
     """
-    return 0.01
+    return 0.86
 
 
 def time_to_expiry(t: int) -> float:
@@ -41,12 +41,19 @@ def black76_call(F: float, K: float, T: float, vol: float, r: float = 0) -> floa
     return exp(-r * T) * (F * norm.cdf(d1) - K * norm.cdf(d2))
 
 
-def call_spread_probability(F: float, K1: float, K2: float, T: float, vol: float, r: float = 0) -> float:
-    return (black76_call(F, K1, T, vol, r) - black76_call(F, K2, T, vol, r)) / (K2 - K1)
+def prob_above(F: float, K: float, T: float, vol: float, r: float = 0) -> float:
+    """Risk-neutral probability that F_T > K (Black-76 digital call)."""
+    if T <= 0:
+        return 1.0 if F > K else 0.0
+
+    d1 = (log(F / K) + 0.5 * vol ** 2 * T) / (vol * sqrt(T))
+    d2 = d1 - vol * sqrt(T)
+
+    return exp(-r * T) * norm.cdf(d2)
 
 
 def get_call_spread_probability_series(polymarket_strike: str) -> None:
-    """Get a series of {t, p} of implied probability from call spread"""
+    """Get a series of {t, p} of implied probability that WTI closes above the strike"""
 
     # first Unix timestamp of that day
     with open("../data/polymarket-2026-7-31.json") as f:
@@ -63,16 +70,16 @@ def get_call_spread_probability_series(polymarket_strike: str) -> None:
 
     # only start calculated implied probability after first_t
     times = [pt["t"] for pt in futures]
-    start_t = bisect.bisect_left(times, first_t) 
+    start_t = bisect.bisect_left(times, first_t)
+
+    strike = float(polymarket_strike.lstrip("$"))
 
     # iterate through all future prices and store them to the series
     rows = []
     for pt in futures[start_t:]:
-        K1 = pt["f"] - 0.5
-        K2 = pt["f"] + 0.5
         T = time_to_expiry(pt["t"])
         vol = get_vol()
-        p = call_spread_probability(pt["f"], K1, K2, T, vol)
+        p = prob_above(pt["f"], strike, T, vol)
 
         rows.append({"futures_t": pt["t"], "futures_p": p})
 

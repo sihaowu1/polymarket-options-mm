@@ -3,3 +3,4 @@
 /data
 .venv
 tasks
+__pycache__
