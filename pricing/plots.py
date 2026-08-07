@@ -13,6 +13,10 @@ def plot_strike(strike: str) -> None:
     with open("../data/polymarket-2026-7-31.json") as f:
         poly = json.load(f)[f"${strike}"]
 
+    start_t = max(futures["futures_t"].min(), min(pt["t"] for pt in poly))
+    futures = futures[futures["futures_t"] >= start_t]
+    poly = [pt for pt in poly if pt["t"] >= start_t]
+
     fig, ax = plt.subplots()
     ax.plot(
         [datetime.fromtimestamp(t, tz=timezone.utc) for t in futures["futures_t"]],

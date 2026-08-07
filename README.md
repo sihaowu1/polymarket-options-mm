@@ -70,3 +70,10 @@ The slope of the line would give us the delta.
 Essentially, we market-make on the Polymarket contract using relative pricing to options markets. 
 
 ## Set Up
+
+# To-do
+
+WTI futures trade continuously during weekdays with a 1hr maintenance break. 
+We can do arbitrage on more than just one day, since the Polymarket contract opens for two days before closing. 
+If we remove the plots.py thing about plotting when there's both a value for futures and Polymarket, we see that around half of
+the Polymarket moves without a corresponding futures probability. 
